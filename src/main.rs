@@ -11,7 +11,14 @@ async fn main() {
 
     let mut req = tonic::Request::new(ya::UtteranceSynthesisRequest {
         model: String::new(),
-        hints: vec![],
+        hints: vec![
+            ya::Hints {
+                hint: Some(ya::hints::Hint::Voice("lera".into())),
+            },
+            ya::Hints {
+                hint: Some(ya::hints::Hint::Role("neutral".into())),
+            },
+        ],
         output_audio_spec: Some(ya::AudioFormatOptions {
             audio_format: Some(ya::audio_format_options::AudioFormat::RawAudio(
                 ya::RawAudio {
@@ -46,9 +53,14 @@ async fn main() {
     println!("Client: {:?}", client);
     let resp = client.utterance_synthesis(req).await.unwrap();
     let mut stream = resp.into_inner();
+    let mut record = Vec::new();
     while let Some(x) = stream.message().await.unwrap() {
-        println!("{:?}", x);
+        println!("{} -> {} : {:?}", x.start_ms, x.length_ms, x.text_chunk);
+        x.audio_chunk
+            .map(|a| record.extend_from_slice(a.data.as_slice()))
+            .unwrap();
     }
+    tokio::fs::write("../audio.pcm", record).await.unwrap();
 }
 
 pub fn tls_config() -> tonic::transport::ClientTlsConfig {

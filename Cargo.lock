@@ -1246,7 +1246,6 @@ dependencies = [
  "dotenv",
  "prost",
  "tokio",
- "tokio-stream",
  "tonic",
  "tonic-build",
 ]
